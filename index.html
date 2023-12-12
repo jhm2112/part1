@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<head>
+    <title>Rating Widget</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">  
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  
+    <rating-widget>
+        <form action="https://httpbin.org/post" method="POST">
+            <label for="rating">How satisfied are you?</label>
+            <input type="hidden" name="question" value="How satisfied are you?">
+            <input type="hidden" name="sentBy" value="HTML">
+            <input type="number" id="rating" name="rating" min="1" max="5" value="0" required>
+            <button type="submit">Submit</button>
+        </form>
+    </rating-widget>
+
+    <script>
+      class RatingWidget extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: 'open' });
+          this.rating = 0;
+          this.render();
+        }
+    
+        render() {
+          this.shadowRoot.innerHTML = `
+            <style>
+              .stars {
+                display: flex;
+              }
+    
+              .star {
+                cursor: pointer;
+                transition: transform 0.5s;
+                font-size: 5dvh; 
+                color: var(--normal-star-color);
+              }
+    
+              .star:hover {
+                transform: scale(1.3);
+                color: var(--hover-star-color);
+              }
+    
+              .message {
+                margin-top: 10px;
+              }
+            </style>
+            <h1>Rating Widget</h1>
+            <form id="ratingForm" action="https://httpbin.org/post" method="POST">
+                <label for="rating">How satisfied are you?</label>
+                <input type="hidden" id="question" name="question" value="How satisfied are you?">
+                <input type="hidden" id="sentBy" name="sentBy" value="JS">
+                <input type="hidden" id="rating" name="rating" min="1" max="5" value="0" required>
+            </form>
+            <div id="stars" class="stars">
+              <span class="star" rating-value="1">&#9733;</span>
+              <span class="star" rating-value="2">&#9733;</span>
+              <span class="star" rating-value="3">&#9733;</span>
+              <span class="star" rating-value="4">&#9733;</span>
+              <span class="star" rating-value="5">&#9733;</span>
+            </div>
+            <p id="message" style="display: none;"></p>
+          `;
+          this.stars = this.shadowRoot.querySelectorAll('.star');
+
+          this.stars.forEach(star => {
+            star.addEventListener('click', () => this.handleRating(star.getAttribute('rating-value')));
+          });
+        }
+    
+        handleRating(val) {
+          this.shadowRoot.getElementById('rating').value = val;
+          this.rating = parseInt(this.shadowRoot.getElementById('rating').value, 10);
+          this.question = this.shadowRoot.getElementById('question').value;
+          this.sentBy = this.shadowRoot.getElementById('sentBy').value;
+
+          fetch('https://httpbin.org/post',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Sent-By': 'JS',
+            },
+            body: JSON.stringify({ rating: this.rating, question: this.question, sentBy: this.sentBy}),
+          })
+          .then(response => console.log(response.json()))
+          .catch(error => console.log(error))
+
+          let message = this.shadowRoot.getElementById('message');
+          if (this.rating <= 3) {
+              message.textContent = "Thanks for your rating. We will improve.";
+          } else {
+              message.textContent = "Thanks for your rating, champ!";
+          }
+
+          this.shadowRoot.querySelector('div').style.display = 'none';
+          this.shadowRoot.getElementById('rating').style.display = 'none';
+          message.style.display = 'block';
+        }
+    
+        
+      }
+    
+      customElements.define('rating-widget', RatingWidget);
+    </script>
+
+
+
+
+</body>
